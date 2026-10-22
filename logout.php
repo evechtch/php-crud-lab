@@ -1,0 +1,43 @@
+<?php
+require 'auth.php';
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    check_auth_token();
+    $_SESSION = array();
+    if (ini_get("session.use_cookies")) {
+        $params = session_get_cookie_params();
+        setcookie(
+            session_name(),
+            '',
+            time() - 42000,
+            $params["path"],
+            $params["domain"],
+            $params["secure"],
+            $params["httponly"]
+        );
+    }
+    session_destroy();
+    header('Location: login.php?logged_out=1');
+    exit();
+}
+?>
+<!doctype html>
+<html lang="th">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Logout</title>
+    <link rel="stylesheet" href="assets/css/crud.css">
+</head>
+<body>
+<main class="wrap">
+    <div class="panel">
+        <h1>Log out?</h1>
+        <form method="post">
+            <input type="hidden" name="auth_csrf" value="<?=auth_escape(auth_token())?>">
+            <button type="submit">Confirm logout</button>
+        </form>
+        <p><a href="skills.php">Back</a></p>
+    </div>
+</main>
+</body>
+</html>
