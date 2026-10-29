@@ -1,104 +1,51 @@
-<!DOCTYPE html>
-<html lang="th">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Resume Lab · Login</title>
-    <!-- สามารถรวมไฟล์ crud_bootstrap.php หรือ CDN ของ Bootstrap มาใส่ตรงนี้ -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        body {
-            background-color: #f8f9fa;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        .navbar-custom {
-            padding: 1rem 2rem;
-            background-color: transparent;
-        }
-        .navbar-custom a {
-            color: #0d6efd;
-            text-decoration: none;
-            margin-right: 15px;
-        }
-        .navbar-custom a.active {
-            color: #212529;
-            font-weight: bold;
-        }
-        .card-container {
-            max-width: 650px;
-            margin: 40px auto;
-            padding: 35px;
-            background: #ffffff;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-            border: 1px solid #e9ecef;
-        }
-        .alert-custom-yellow {
-            background-color: #fff8e1;
-            border-left: 4px solid #ffc107;
-            padding: 12px 16px;
-            font-size: 0.9rem;
-            color: #333;
-            margin-bottom: 25px;
-        }
-        .form-label {
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 6px;
-        }
-        .btn-custom-blue {
-            background-color: #0b5ed7;
-            color: white;
-            border: none;
-            padding: 10px;
-            font-weight: 500;
-        }
-        .btn-custom-blue:hover {
-            background-color: #0a58ca;
-            color: white;
-        }
-    </style>
-</head>
-<body>
+<?php
+require 'auth.php';
+require 'config/db.php';
 
-    <!-- Header / Navbar ด้านบน -->
-    <div class="navbar-custom">
-        <a href="index.php">Resume</a>
-        <a href="about.php">About</a>
-        <a href="login.php" class="active">Login</a>
-        <a href="register.php">Register</a>
-    </div>
+// ถ้าล็อกอินอยู่แล้ว ให้เปลี่ยนหน้าไปยัง skills.php
+if (!empty($_SESSION['user_id'])) { 
+    header('Location: skills.php'); 
+    exit; 
+}
 
-    <!-- กล่อง Content การล็อกอิน (Card Container) -->
-    <div class="card-container">
-        <h2 class="fw-bold mb-4" style="color: #0f4c81;">Resume Lab · Login</h2>
+$error = '';
 
-        <!-- กล่องแจ้งเตือนสีเหลือง (Alert Message) -->
-        <div class="alert-custom-yellow">
-            Student task: Implement PHP session login with MySQL authentication.<br>
-            Current state: <?php echo isset($_GET['logged_out']) ? 'Logged out.' : 'Not logged in.'; ?>
-        </div>
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    check_auth_token();
+    $email = strtolower(trim((string)($_POST['email'] ?? '')));
+    $password = (string)($_POST['password'] ?? '');
 
-        <!-- ฟอร์มเข้าสู่ระบบ (เรียงป้ายชื่อไว้ด้านบน ช่องกรอกไว้ด้านล่าง) -->
-        <form action="login.php" method="POST">
-            <div class="mb-3">
-                <label for="email" class="form-label">Email</label>
-                <input type="email" name="email" id="email" class="form-control" required>
-            </div>
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL) || $password === '') {
+        $error = 'Enter email and password.';
+    } else {
+        // Query หา user จาก email
+        $sql = 'SELECT id, profile_id, password_hash FROM users WHERE email = ? LIMIT 1';
+        $stmt = mysqli_prepare($conn, $sql);
 
-            <div class="mb-4">
-                <label for="password" class="form-label">Password</label>
-                <input type="password" name="password" id="password" class="form-control" required>
-            </div>
+        if ($stmt) {
+            mysqli_stmt_bind_param($stmt, 's', $email);
+            mysqli_stmt_execute($stmt);
+            mysqli_stmt_bind_result($stmt, $userId, $profileId, $hash);
 
-            <button type="submit" class="btn btn-custom-blue w-100 mb-3">Login</button>
-        </form>
+            if (mysqli_stmt_fetch($stmt)) {
+                // ตรวจสอบรหัสผ่าน
+                if (password_verify($password, $hash)) {
+                    mysqli_stmt_close($stmt);
 
-        <div>
-            <span class="text-muted">New user?</span> 
-            <a href="register.php" class="text-decoration-none">Register</a>
-        </div>
-    </div>
+                    // เก็บค่าเข้า Session
+                    session_regenerate_id(true);
+                    $_SESSION['user_id']    = $userId;
+                    $_SESSION['profile_id'] = $profileId;
+                    $_SESSION['email']      = $email;
 
-</body>
-</html>
+                    // เปลี่ยนหน้าไปยัง skills.php
+                    header('Location: skills.php');
+                    exit;
+                }
+            }
+            mysqli_stmt_close($stmt);
+        }
+        $error = 'Invalid email or password.';
+    }
+}
+?>
