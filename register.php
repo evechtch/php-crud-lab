@@ -1,4 +1,7 @@
 <?php
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
+
 require 'auth.php';
 require 'config/db.php';
 
@@ -11,34 +14,43 @@ $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     check_auth_token();
-    $name = trim((string)($_POST['full_name'] ?? ''));
+    $name  = trim((string)($_POST['full_name'] ?? ''));
     $email = strtolower(trim((string)($_POST['email'] ?? '')));
-    $pass = (string)($_POST['password'] ?? '');
+    $pass  = (string)($_POST['password'] ?? '');
 
     if (mb_strlen($name) < 2 || mb_strlen($name) > 150 || !filter_var($email, FILTER_VALIDATE_EMAIL) || strlen($email) > 190 || strlen($pass) < 10) {
         $error = 'Provide a name, valid email, and password of at least 10 characters.';
     } else {
-        mysqli_begin_transaction($conn);
         try {
+            // 1. เพิ่มข้อมูลโปรไฟล์
             $q = mysqli_prepare($conn, 'INSERT INTO profile (full_name, email, headline) VALUES (?, ?, ?)');
+            if (!$q) {
+                throw new Exception('Profile prepare failed: ' . mysqli_error($conn));
+            }
             $headline = 'Student'; 
             mysqli_stmt_bind_param($q, 'sss', $name, $email, $headline);
-            if (!mysqli_stmt_execute($q)) throw new Exception('profile');
+            if (!mysqli_stmt_execute($q)) {
+                throw new Exception('Profile insert failed: ' . mysqli_stmt_error($q));
+            }
             $pid = mysqli_insert_id($conn); 
             mysqli_stmt_close($q);
 
+            // 2. เพิ่มข้อมูลผู้ใช้งาน
             $hash = password_hash($pass, PASSWORD_DEFAULT);
             $q = mysqli_prepare($conn, 'INSERT INTO users (profile_id, email, password_hash) VALUES (?, ?, ?)');
+            if (!$q) {
+                throw new Exception('User prepare failed: ' . mysqli_error($conn));
+            }
             mysqli_stmt_bind_param($q, 'iss', $pid, $email, $hash);
-            if (!mysqli_stmt_execute($q)) throw new Exception('user');
+            if (!mysqli_stmt_execute($q)) {
+                throw new Exception('User insert failed: ' . mysqli_stmt_error($q));
+            }
             mysqli_stmt_close($q);
 
-            mysqli_commit($conn); 
             header('Location: login.php?registered=1'); 
             exit;
         } catch (Throwable $e) {
-            mysqli_rollback($conn); 
-            $error = 'Could not create account. Email may already be in use.';
+            $error = 'Error: ' . $e->getMessage();
         }
     }
 }
@@ -102,7 +114,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <div class="mt-2">
             <span class="text-muted">Already have an account?</span> 
-            <a href="login.php" class="text-decoration-none">Login</a>
+            <a href="login.php" class="text-decoration-none">Register/Login</a>
         </div>
     </div>
 
