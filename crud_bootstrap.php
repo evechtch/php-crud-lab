@@ -24,10 +24,11 @@ function page_start($title) {
         .top-nav { padding: 1.2rem 2.5rem; background: transparent; }
         .top-nav a { color: #0b5394; text-decoration: none; margin-right: 20px; font-size: 1rem; }
         .top-nav a.active { font-weight: 700; color: #000; }
-        .app-card { max-width: 800px; margin: 30px auto; padding: 35px 40px; background: #ffffff; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.03); border: 1px solid #e9ecef; }
+        .app-card { max-width: 750px; margin: 30px auto; padding: 35px 40px; background: #ffffff; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.03); border: 1px solid #e9ecef; }
         .btn-navy { background-color: #0b5394; color: #ffffff; font-weight: 500; border: none; }
         .btn-navy:hover { background-color: #083d6c; color: #ffffff; }
-        .table { margin-top: 15px; }
+        .form-label { font-weight: 600; color: #212529; }
+        .form-control, .form-select { padding: 9px 12px; border-radius: 6px; }
     </style>
 </head>
 <body>
@@ -38,7 +39,7 @@ function page_start($title) {
         <a href="logout.php">Logout</a>
     </div>
     <div class="app-card">
-        <h2 class="fw-bold mb-3" style="color: #0b5394;">'.h($title).'</h2>';
+        <h2 class="fw-bold mb-4" style="color: #0b5394;">'.h($title).'</h2>';
 }
 
 function page_end() { 
