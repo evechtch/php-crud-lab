@@ -2,7 +2,7 @@
 // Simple procedural MySQL connection using mysqli
 $host = 'localhost';
 $user = 's68160379';
-$pass = '';
+$pass = 'hAUNzjhR';
 $dbname = 's68160379';
 
 $conn = mysqli_connect($host, $user, $pass, $dbname);
