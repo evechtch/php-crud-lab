@@ -1,5 +1,5 @@
 <?php
-require 'crud_bootstrap.php';
+require_once __DIR__ . '/crud_bootstrap.php';
 
 $error = '';
 $name = '';
@@ -14,7 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($pid === 0 || $name === '' || mb_strlen($name) > 120 || !in_array($level, ['Beginner', 'Intermediate', 'Advanced'], true)) {
         $error = 'Please enter a valid skill and level.';
     } else {
-        // TODO 1: Complete INSERT SQL for skills table
+        // SQL บันทึกลงตาราง skills
         $sql = 'INSERT INTO skills (profile_id, name, level) VALUES (?, ?, ?)';
         $stmt = mysqli_prepare($conn, $sql);
 
